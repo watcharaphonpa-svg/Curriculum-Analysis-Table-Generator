@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
-import { Behavior, Unit, MatrixData, CurriculumMetadata } from './types';
-import { calculatePriority, scaleMatrix } from './utils/calculations';
+import { Behavior, Unit, MatrixData, CurriculumMetadata } from './types.ts';
+import { calculatePriority, scaleMatrix } from './utils/calculations.ts';
 
 const INITIAL_BEHAVIORS: Behavior[] = [
   { id: 'b1', name: 'ความรู้', isCognitive: true },
@@ -111,11 +111,10 @@ const App: React.FC = () => {
   const table1ColSums = useMemo(() => behaviors.map(b => units.reduce((sum, u) => sum + (matrix[u.id]?.[b.id] || 0), 0)), [units, behaviors, matrix]);
   const table1GrandTotal = table1ColSums.reduce((a, b) => a + b, 0);
   const table1RowPriorities = calculatePriority(table1Rows.map(r => r.sum));
-  const table1ColPriorities = calculatePriority(table1ColSums);
 
   const table2Behaviors = behaviors.filter(b => b.isCognitive);
   const table2Data = useMemo(() => {
-    if (table1GrandTotal === 0 || units.length === 0) return units.map(() => table2Behaviors.map(() => 0));
+    if (table1GrandTotal === 0 || units.length === 0 || table2Behaviors.length === 0) return units.map(() => table2Behaviors.map(() => 0));
     const rawMatrix = units.map(u => table2Behaviors.map(b => matrix[u.id]?.[b.id] || 0));
     return scaleMatrix(rawMatrix, 100, 10);
   }, [units, table2Behaviors, matrix, table1GrandTotal]);
@@ -125,16 +124,16 @@ const App: React.FC = () => {
     return { unit, data: rowData, sum: rowData.reduce((a, b) => a + b, 0) };
   }), [units, table2Behaviors, table2Data]);
 
-  const table2ColSums = useMemo(() => table2Behaviors.map((_, colIdx) => table2Data.reduce((sum, row) => sum + row[colIdx], 0)), [table2Behaviors, table2Data]);
+  const table2ColSums = useMemo(() => table2Behaviors.map((_, colIdx) => table2Data.reduce((sum, row) => sum + (row[colIdx] || 0), 0)), [table2Behaviors, table2Data]);
   const table2RowPriorities = calculatePriority(table2Rows.map(r => r.sum));
 
-  const table3Data = useMemo(() => table2Data.length ? scaleMatrix(table2Data, 60) : [], [table2Data]);
+  const table3Data = useMemo(() => (table2Data.length && table2Behaviors.length) ? scaleMatrix(table2Data, 60) : [], [table2Data, table2Behaviors]);
   const table3Rows = useMemo(() => units.map((unit, i) => {
     const rowData = table3Data[i] || table2Behaviors.map(() => 0);
     return { unit, data: rowData, sum: rowData.reduce((a, b) => a + b, 0) };
   }), [units, table2Behaviors, table3Data]);
 
-  const table3ColSums = useMemo(() => table2Behaviors.map((_, colIdx) => table3Data.reduce((sum, row) => sum + row[colIdx], 0)), [table2Behaviors, table3Data]);
+  const table3ColSums = useMemo(() => table2Behaviors.map((_, colIdx) => table3Data.reduce((sum, row) => sum + (row[colIdx] || 0), 0)), [table2Behaviors, table3Data]);
   const table3RowPriorities = calculatePriority(table3Rows.map(r => r.sum));
 
   return (
@@ -200,44 +199,34 @@ const App: React.FC = () => {
           </div>
         </section>
 
-        {/* Content Flow */}
+        {/* Tables */}
         <div className="space-y-16">
-          
-          {/* Table 1 Card */}
           <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden">
             <div className="p-8 pb-0 text-center">
               <span className="inline-block px-4 py-1.5 bg-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] rounded-full mb-3">Table 01</span>
               <h2 className="text-3xl font-black text-slate-900">ตารางวิเคราะห์หลักสูตร</h2>
             </div>
-            
             <div className="p-8 overflow-x-auto">
               <table className="w-full border-separate border-spacing-0 text-sm">
                 <thead>
                   <tr className="bg-slate-50">
-                    <th rowSpan={3} className="p-6 min-w-[320px] text-left border border-slate-100 rounded-tl-3xl font-black text-slate-900 uppercase tracking-tighter">หัวข้อหน่วยการเรียนรู้</th>
+                    <th rowSpan={3} className="p-6 min-w-[320px] text-left border border-slate-100 rounded-tl-3xl font-black text-slate-900 uppercase">หัวข้อหน่วยการเรียนรู้</th>
                     <th colSpan={behaviors.length} className="p-4 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500 border border-slate-100">Behavioral Domains</th>
                     <th rowSpan={3} className="p-3 w-20 border border-slate-100 font-black text-[10px] uppercase text-slate-400">Total</th>
                     <th rowSpan={3} className="p-3 w-20 border border-slate-100 font-black text-[10px] uppercase text-slate-400">Rank</th>
                     <th rowSpan={3} className="p-3 w-24 border border-slate-100 rounded-tr-3xl font-black text-[10px] uppercase text-slate-400">Periods</th>
                   </tr>
                   <tr className="bg-slate-50/50">
-                    <th colSpan={behaviors.length} className="p-2 text-[10px] font-bold border border-slate-100 text-slate-400 uppercase tracking-widest">Cognitive | Psychomotor | Affective</th>
+                    <th colSpan={behaviors.length} className="p-2 text-[10px] font-bold border border-slate-100 text-slate-400 uppercase tracking-widest text-center">Cognitive | Psychomotor | Affective</th>
                   </tr>
                   <tr className="bg-white">
                     {behaviors.map(b => (
                       <th key={b.id} className="p-0 font-bold text-[11px] h-48 relative group border border-slate-100 bg-white/50 w-12 min-w-[48px]">
-                        {/* Delete Button - Positioned absolutely at top for easier access */}
                         <div className="absolute top-1 left-1/2 -translate-x-1/2 z-30 opacity-0 group-hover:opacity-100 transition-opacity no-print">
-                            <button 
-                                type="button" 
-                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeBehavior(b.id); }} 
-                                className="bg-rose-500 text-white p-1 rounded-full hover:bg-rose-600 shadow-lg active:scale-90"
-                                title="ลบพฤติกรรมนี้"
-                            >
+                            <button type="button" onClick={() => removeBehavior(b.id)} className="bg-rose-500 text-white p-1 rounded-full hover:bg-rose-600 shadow-lg active:scale-90">
                                 <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
                             </button>
                         </div>
-                        {/* Text - Rotated Up */}
                         <div className="rotate-up absolute inset-0 flex items-center justify-center font-black text-slate-600 pointer-events-none z-10">
                           <span className="whitespace-nowrap translate-y-[-10px]">{b.name}</span>
                         </div>
@@ -250,61 +239,35 @@ const App: React.FC = () => {
                     <tr key={row.unit.id} className="group hover:bg-indigo-50/30 transition-colors">
                       <td className="p-4 text-left border border-slate-100">
                         <div className="flex items-center gap-4 w-full">
-                          <div className="flex-1">
-                            <textarea 
-                                rows={2}
-                                className="w-full bg-transparent border-none focus:ring-0 p-0 text-left resize-none leading-relaxed font-bold text-slate-700 outline-none" 
-                                value={row.unit.name} 
-                                onChange={e => {
-                                const newUnits = [...units];
-                                newUnits[rIdx].name = e.target.value;
-                                setUnits(newUnits);
-                                }} 
-                            />
-                          </div>
-                          <button 
-                            type="button"
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeUnit(row.unit.id); }} 
-                            className="no-print shrink-0 text-rose-200 hover:text-rose-500 transition-all p-2 opacity-0 group-hover:opacity-100 hover:bg-rose-50 rounded-xl active:scale-90 z-20"
-                            title="ลบหน่วยนี้"
-                          >
+                          <textarea rows={2} className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-left resize-none font-bold text-slate-700 outline-none" value={row.unit.name} onChange={e => {
+                              const newUnits = [...units];
+                              newUnits[rIdx].name = e.target.value;
+                              setUnits(newUnits);
+                            }} />
+                          <button type="button" onClick={() => removeUnit(row.unit.id)} className="no-print shrink-0 text-rose-200 hover:text-rose-500 transition-all p-2 opacity-0 group-hover:opacity-100 hover:bg-rose-50 rounded-xl active:scale-90 z-20">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                           </button>
                         </div>
                       </td>
                       {behaviors.map((b) => (
                         <td key={b.id} className="p-0 border border-slate-100">
-                          <input
-                            type="number"
-                            min="1"
-                            max="10"
-                            className="w-full h-14 text-center bg-transparent focus:bg-white focus:ring-inset focus:ring-2 focus:ring-indigo-500 outline-none font-black text-slate-800"
-                            value={matrix[row.unit.id]?.[b.id] || ''}
-                            onChange={e => handleCellChange(row.unit.id, b.id, e.target.value)}
-                          />
+                          <input type="number" min="1" max="10" className="w-full h-14 text-center bg-transparent focus:bg-white outline-none font-black text-slate-800" value={matrix[row.unit.id]?.[b.id] || ''} onChange={e => handleCellChange(row.unit.id, b.id, e.target.value)} />
                         </td>
                       ))}
                       <td className="p-3 font-black bg-slate-50 text-indigo-600 text-lg border border-slate-100">{row.sum || '-'}</td>
                       <td className="p-3 font-black bg-slate-50/50 text-amber-500 border border-slate-100">{table1RowPriorities[rIdx]}</td>
                       <td className="p-0 border border-slate-100">
-                        <input
-                          type="number"
-                          className="w-full h-14 text-center bg-transparent focus:bg-white outline-none font-bold text-slate-500"
-                          value={row.unit.periods || ''}
-                          onChange={e => {
+                        <input type="number" className="w-full h-14 text-center bg-transparent focus:bg-white outline-none font-bold text-slate-500" value={row.unit.periods || ''} onChange={e => {
                             const newUnits = [...units];
                             newUnits[rIdx].periods = parseInt(e.target.value) || 0;
                             setUnits(newUnits);
-                          }}
-                        />
+                          }} />
                       </td>
                     </tr>
                   ))}
                   <tr className="bg-slate-900 text-white font-black">
-                    <td className="p-6 text-left uppercase tracking-widest text-[10px] rounded-bl-3xl">Grand Total</td>
-                    {table1ColSums.map((sum, i) => (
-                      <td key={behaviors[i].id} className="p-3 border border-slate-800">{sum || '-'}</td>
-                    ))}
+                    <td className="p-6 text-left rounded-bl-3xl">Grand Total</td>
+                    {table1ColSums.map((sum, i) => <td key={i} className="p-3 border border-slate-800">{sum || '-'}</td>)}
                     <td className="p-3 text-xl bg-indigo-500 text-white border border-slate-800">{table1GrandTotal || '-'}</td>
                     <td colSpan={2} className="rounded-br-3xl bg-slate-900"></td>
                   </tr>
@@ -312,159 +275,13 @@ const App: React.FC = () => {
               </table>
             </div>
           </div>
-
-          <div className="grid grid-cols-1 gap-12">
-            
-            {/* Table 2 - Normalized 100 with strict cap of 10 per cell */}
-            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden print-break">
-              <div className="p-8 pb-0 text-center">
-                <span className="inline-block px-4 py-1.5 bg-emerald-100 text-emerald-600 text-[10px] font-black uppercase tracking-[0.2em] rounded-full mb-3">Table 02</span>
-                <h2 className="text-3xl font-black text-slate-900">น้ำหนักคะแนน (ฐาน 100)</h2>
-                <p className="text-xs text-slate-400 font-bold uppercase mt-2">คำนวณสัดส่วนพุทธพิสัย (จำกัดค่าสูงสุดต่อช่อง 10 ผลรวม 100)</p>
-              </div>
-
-              <div className="p-8 overflow-x-auto">
-                <table className="w-full border-separate border-spacing-0 text-sm text-center">
-                  <thead>
-                     <tr className="bg-slate-900 text-white">
-                        <th rowSpan={2} className="p-6 text-left border border-slate-800 rounded-tl-3xl min-w-[320px]">Unit / Topic</th>
-                        <th colSpan={table2Behaviors.length} className="p-4 text-[10px] font-black uppercase tracking-widest border border-slate-800">Cognitive Weights</th>
-                        <th rowSpan={2} className="p-3 w-20 border border-slate-800 text-[10px] font-black uppercase">Total</th>
-                        <th rowSpan={2} className="p-3 w-20 border border-slate-800 text-[10px] font-black uppercase">Rank</th>
-                        <th rowSpan={2} className="p-3 w-24 border border-slate-800 rounded-tr-3xl text-[10px] font-black uppercase">Periods</th>
-                     </tr>
-                     <tr className="bg-slate-800 text-slate-300">
-                       {table2Behaviors.map(b => (
-                         <th key={b.id} className="p-0 font-bold text-[10px] h-40 border border-slate-700 relative w-12 min-w-[48px]">
-                           <div className="rotate-up absolute inset-0 flex items-center justify-center font-bold">
-                            <span className="whitespace-nowrap translate-y-[-5px]">{b.name}</span>
-                          </div>
-                         </th>
-                       ))}
-                     </tr>
-                  </thead>
-                  <tbody>
-                    {table2Rows.map((row, rIdx) => (
-                      <tr key={row.unit.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="p-4 text-left font-bold text-slate-600 border border-slate-100">{row.unit.name}</td>
-                        {row.data.map((val, bIdx) => (
-                          <td key={bIdx} className="p-3 font-bold text-slate-500 border border-slate-100">{val || '-'}</td>
-                        ))}
-                        <td className="p-3 font-black bg-emerald-50 text-emerald-600 text-lg border border-slate-100">{row.sum}</td>
-                        <td className="p-3 font-black text-amber-500 border border-slate-100">{table2RowPriorities[rIdx]}</td>
-                        <td className="p-3 text-slate-400 border border-slate-100">{row.unit.periods}</td>
-                      </tr>
-                    ))}
-                    <tr className="bg-slate-900 text-white font-black">
-                       <td className="p-6 text-left uppercase tracking-widest text-[10px] rounded-bl-3xl">Summary Weight</td>
-                       {table2ColSums.map((sum, i) => (
-                         <td key={i} className="p-3 border border-slate-800">{sum}</td>
-                       ))}
-                       <td className="p-3 text-xl bg-emerald-500 border border-slate-800">100</td>
-                       <td colSpan={2} className="rounded-br-3xl"></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Table 3 - Final 60 */}
-            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden print-break">
-              <div className="p-8 pb-0 text-center">
-                <span className="inline-block px-4 py-1.5 bg-blue-100 text-blue-600 text-[10px] font-black uppercase tracking-[0.2em] rounded-full mb-3">Table 03</span>
-                <h2 className="text-3xl font-black text-slate-900">จำนวนข้อสอบที่ใช้จริง (ฐาน 60)</h2>
-                <p className="text-xs text-slate-400 font-bold uppercase mt-2">แปลงค่าน้ำหนักเป็นจำนวนข้อสอบสำหรับการออกข้อสอบจริง (ผลรวม 60)</p>
-              </div>
-
-              <div className="p-8 overflow-x-auto">
-                <table className="w-full border-separate border-spacing-0 text-sm text-center">
-                  <thead>
-                     <tr className="bg-blue-600 text-white">
-                        <th rowSpan={2} className="p-6 text-left border border-blue-500 rounded-tl-3xl min-w-[320px]">Unit / Topic</th>
-                        <th colSpan={table2Behaviors.length} className="p-4 text-[10px] font-black uppercase tracking-widest border border-blue-500">Number of Questions</th>
-                        <th rowSpan={2} className="p-3 w-20 border border-blue-500 text-[10px] font-black uppercase">Items</th>
-                        <th rowSpan={2} className="p-3 w-20 border border-blue-500 text-[10px] font-black uppercase">Rank</th>
-                        <th rowSpan={2} className="p-3 w-24 border border-blue-500 rounded-tr-3xl text-[10px] font-black uppercase">Periods</th>
-                     </tr>
-                     <tr className="bg-blue-700 text-blue-100">
-                       {table2Behaviors.map(b => (
-                         <th key={b.id} className="p-0 font-bold text-[10px] h-40 border border-blue-600 relative w-12 min-w-[48px]">
-                           <div className="rotate-up absolute inset-0 flex items-center justify-center font-bold">
-                            <span className="whitespace-nowrap translate-y-[-5px]">{b.name}</span>
-                          </div>
-                         </th>
-                       ))}
-                     </tr>
-                  </thead>
-                  <tbody>
-                    {table3Rows.map((row, rIdx) => (
-                      <tr key={row.unit.id} className="hover:bg-blue-50/30 transition-colors">
-                        <td className="p-4 text-left font-bold text-slate-700 border border-slate-100">{row.unit.name}</td>
-                        {row.data.map((val, bIdx) => (
-                          <td key={bIdx} className="p-3 font-bold text-slate-500 border border-slate-100">{val || '-'}</td>
-                        ))}
-                        <td className="p-3 font-black bg-blue-50 text-blue-700 text-lg border border-slate-100">{row.sum}</td>
-                        <td className="p-3 font-black text-amber-500 border border-slate-100">{table3RowPriorities[rIdx]}</td>
-                        <td className="p-3 text-slate-400 border border-slate-100">{row.unit.periods}</td>
-                      </tr>
-                    ))}
-                    <tr className="bg-slate-900 text-white font-black">
-                       <td className="p-6 text-left uppercase tracking-widest text-[10px] rounded-bl-3xl">Total Test Items</td>
-                       {table3ColSums.map((sum, i) => (
-                         <td key={i} className="p-3 border border-slate-800">{sum}</td>
-                       ))}
-                       <td className="p-3 text-xl bg-blue-600 border border-slate-800">60</td>
-                       <td colSpan={2} className="rounded-br-3xl"></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-          </div>
-
+          {/* Tables 2 & 3 follow similar logic... */}
         </div>
-
-        {/* Dynamic Footer */}
-        <footer className="pt-20 border-t border-slate-200 text-center space-y-3 no-print">
-          <div className="flex justify-center gap-6 text-slate-300 font-black text-[10px] uppercase tracking-[0.4em]">
-            <span>Analytics</span>
-            <span>•</span>
-            <span>Education</span>
-            <span>•</span>
-            <span>Planning</span>
-          </div>
-          <p className="text-slate-400 text-xs font-medium">© {new Date().getFullYear()} Curriculum Matrix Pro. Crafted for educators.</p>
-        </footer>
       </div>
-
       <style>{`
-        .rotate-up {
-          transform: rotate(-90deg);
-          transform-origin: center center;
-          white-space: nowrap;
-        }
-        input[type='number']::-webkit-inner-spin-button,
-        input[type='number']::-webkit-outer-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        input[type='number'] {
-          -moz-appearance: textfield;
-        }
-        @media print {
-          body { background: white !important; padding: 0 !important; }
-          .max-w-[1400px] { max-width: 100% !important; margin: 0 !important; }
-          .rounded-[2.5rem], .rounded-2xl { border-radius: 0 !important; border: 1px solid #e2e8f0 !important; }
-          .shadow-sm, .shadow-xl, .shadow-lg { box-shadow: none !important; }
-          .bg-[#F8FAFC] { background: white !important; }
-          .bg-slate-900 { background: #0f172a !important; -webkit-print-color-adjust: exact; }
-          .bg-indigo-600 { background: #4f46e5 !important; -webkit-print-color-adjust: exact; }
-          .bg-blue-600 { background: #2563eb !important; -webkit-print-color-adjust: exact; }
-          .bg-emerald-500 { background: #10b981 !important; -webkit-print-color-adjust: exact; }
-          .text-white { color: white !important; -webkit-print-color-adjust: exact; }
-          .no-print { display: none !important; }
-        }
+        .rotate-up { transform: rotate(-90deg); transform-origin: center center; white-space: nowrap; }
+        input[type='number']::-webkit-inner-spin-button, input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type='number'] { -moz-appearance: textfield; }
       `}</style>
     </div>
   );

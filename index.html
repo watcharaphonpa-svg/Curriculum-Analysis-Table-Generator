@@ -13,16 +13,18 @@
             background-color: #F8FAFC;
         }
         @media print {
-            .no-print { display: none; }
+            .no-print { display: none !important; }
             .print-break { page-break-before: always; }
         }
     </style>
 <script type="importmap">
 {
   "imports": {
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3"
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
