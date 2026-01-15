@@ -193,7 +193,7 @@ const App: React.FC = () => {
               เพิ่มพฤติกรรม
             </button>
             <div className="flex-1"></div>
-            <button type="button" onClick={clearMatrix} className="px-6 py-3 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl font-bold transition-all flex items-center gap-2 active:scale-95 border border-rose-100">
+            <button type="button" onClick={clearMatrix} className="px-6 py-3 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl font-bold transition-all flex items-center gap-2 active:scale-95 border border-rose-100 shadow-sm">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
               ล้างตัวเลขทั้งหมด
             </button>
@@ -226,18 +226,19 @@ const App: React.FC = () => {
                   <tr className="bg-white">
                     {behaviors.map(b => (
                       <th key={b.id} className="p-0 font-bold text-[11px] h-48 relative group border border-slate-100 bg-white/50 w-12 min-w-[48px]">
-                        {/* Delete Button - Outside rotation for better click accuracy */}
-                        <div className="absolute top-1 left-1/2 -translate-x-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity no-print">
+                        {/* Delete Button - Positioned absolutely at top for easier access */}
+                        <div className="absolute top-1 left-1/2 -translate-x-1/2 z-30 opacity-0 group-hover:opacity-100 transition-opacity no-print">
                             <button 
                                 type="button" 
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeBehavior(b.id); }} 
-                                className="bg-rose-500 text-white p-1 rounded-full hover:bg-rose-600 shadow-md active:scale-90"
+                                className="bg-rose-500 text-white p-1 rounded-full hover:bg-rose-600 shadow-lg active:scale-90"
+                                title="ลบพฤติกรรมนี้"
                             >
-                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
+                                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
                             </button>
                         </div>
                         {/* Text - Rotated Up */}
-                        <div className="rotate-up absolute inset-0 flex items-center justify-center font-black text-slate-600 pointer-events-none">
+                        <div className="rotate-up absolute inset-0 flex items-center justify-center font-black text-slate-600 pointer-events-none z-10">
                           <span className="whitespace-nowrap translate-y-[-10px]">{b.name}</span>
                         </div>
                       </th>
@@ -248,21 +249,23 @@ const App: React.FC = () => {
                   {table1Rows.map((row, rIdx) => (
                     <tr key={row.unit.id} className="group hover:bg-indigo-50/30 transition-colors">
                       <td className="p-4 text-left border border-slate-100">
-                        <div className="flex items-start gap-4">
-                          <textarea 
-                            rows={2}
-                            className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-left resize-none leading-relaxed font-bold text-slate-700 min-w-[200px] outline-none" 
-                            value={row.unit.name} 
-                            onChange={e => {
-                              const newUnits = [...units];
-                              newUnits[rIdx].name = e.target.value;
-                              setUnits(newUnits);
-                            }} 
-                          />
+                        <div className="flex items-center gap-4 w-full">
+                          <div className="flex-1">
+                            <textarea 
+                                rows={2}
+                                className="w-full bg-transparent border-none focus:ring-0 p-0 text-left resize-none leading-relaxed font-bold text-slate-700 outline-none" 
+                                value={row.unit.name} 
+                                onChange={e => {
+                                const newUnits = [...units];
+                                newUnits[rIdx].name = e.target.value;
+                                setUnits(newUnits);
+                                }} 
+                            />
+                          </div>
                           <button 
                             type="button"
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeUnit(row.unit.id); }} 
-                            className="no-print text-rose-200 hover:text-rose-500 transition-all p-1.5 opacity-0 group-hover:opacity-100 hover:bg-rose-50 rounded-lg active:scale-90"
+                            className="no-print shrink-0 text-rose-200 hover:text-rose-500 transition-all p-2 opacity-0 group-hover:opacity-100 hover:bg-rose-50 rounded-xl active:scale-90 z-20"
                             title="ลบหน่วยนี้"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -324,7 +327,7 @@ const App: React.FC = () => {
                 <table className="w-full border-separate border-spacing-0 text-sm text-center">
                   <thead>
                      <tr className="bg-slate-900 text-white">
-                        <th rowSpan={2} className="p-6 text-left border border-slate-800 rounded-tl-3xl">Unit / Topic</th>
+                        <th rowSpan={2} className="p-6 text-left border border-slate-800 rounded-tl-3xl min-w-[320px]">Unit / Topic</th>
                         <th colSpan={table2Behaviors.length} className="p-4 text-[10px] font-black uppercase tracking-widest border border-slate-800">Cognitive Weights</th>
                         <th rowSpan={2} className="p-3 w-20 border border-slate-800 text-[10px] font-black uppercase">Total</th>
                         <th rowSpan={2} className="p-3 w-20 border border-slate-800 text-[10px] font-black uppercase">Rank</th>
@@ -377,7 +380,7 @@ const App: React.FC = () => {
                 <table className="w-full border-separate border-spacing-0 text-sm text-center">
                   <thead>
                      <tr className="bg-blue-600 text-white">
-                        <th rowSpan={2} className="p-6 text-left border border-blue-500 rounded-tl-3xl">Unit / Topic</th>
+                        <th rowSpan={2} className="p-6 text-left border border-blue-500 rounded-tl-3xl min-w-[320px]">Unit / Topic</th>
                         <th colSpan={table2Behaviors.length} className="p-4 text-[10px] font-black uppercase tracking-widest border border-blue-500">Number of Questions</th>
                         <th rowSpan={2} className="p-3 w-20 border border-blue-500 text-[10px] font-black uppercase">Items</th>
                         <th rowSpan={2} className="p-3 w-20 border border-blue-500 text-[10px] font-black uppercase">Rank</th>
