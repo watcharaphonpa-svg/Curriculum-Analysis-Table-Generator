@@ -23,20 +23,19 @@ export const calculatePriority = (values: number[]): (number | string)[] => {
 
 /**
  * Distributes a target sum across an array of values using the Largest Remainder Method.
- * Optional maxVal parameter constrains individual cell values.
+ * Strictly respects maxVal if the targetSum allows it.
  */
 export const distributeSum = (values: number[], targetSum: number, maxVal?: number): number[] => {
   const currentTotal = values.reduce((a, b) => a + b, 0);
   if (currentTotal === 0) return values.map(() => 0);
 
-  // If target sum is impossible with max constraints, relax max constraint
-  const effectiveMax = (maxVal && targetSum <= values.length * maxVal) ? maxVal : undefined;
-
+  // Initial scaling
   const scaled = values.map(v => (v * targetSum) / currentTotal);
   let results = scaled.map(v => Math.floor(v));
   
-  if (effectiveMax) {
-    results = results.map(v => Math.min(v, effectiveMax));
+  // Apply hard limit if requested and possible
+  if (maxVal) {
+    results = results.map(v => Math.min(v, maxVal));
   }
 
   let currentSum = results.reduce((a, b) => a + b, 0);
@@ -47,16 +46,17 @@ export const distributeSum = (values: number[], targetSum: number, maxVal?: numb
     .map((r, i) => ({ r, i }))
     .sort((a, b) => b.r - a.r);
 
-  // First pass: Fill using remainders while respecting maxVal
+  // Distribute difference by remainders while strictly respecting maxVal
   for (let i = 0; i < indexedRemainders.length && diff > 0; i++) {
     const idx = indexedRemainders[i].i;
-    if (!effectiveMax || results[idx] < effectiveMax) {
+    if (!maxVal || results[idx] < maxVal) {
       results[idx]++;
       diff--;
     }
   }
 
-  // Second pass: If still diff (due to hard max constraint), we must exceed max to reach target sum
+  // Final fallback: if we still have diff and strict maxVal prevents reaching targetSum,
+  // we must increment even if it exceeds maxVal (mathematical necessity)
   if (diff > 0) {
     for (let i = 0; i < results.length && diff > 0; i++) {
       results[i]++;

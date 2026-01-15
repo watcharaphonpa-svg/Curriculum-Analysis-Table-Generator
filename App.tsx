@@ -58,28 +58,47 @@ const App: React.FC = () => {
 
   const addUnit = () => {
     const id = `u${Date.now()}`;
-    setUnits([...units, { id, name: `หน่วยที่ ${units.length + 1}. `, periods: 0 }]);
+    setUnits(prev => [...prev, { id, name: `หน่วยที่ ${prev.length + 1}. `, periods: 0 }]);
   };
 
   const addBehavior = () => {
     const id = `b${Date.now()}`;
     const name = prompt('กรุณาระบุชื่อพฤติกรรม:');
     if (name) {
-      setBehaviors([...behaviors, { id, name, isCognitive: true }]);
+      setBehaviors(prev => [...prev, { id, name, isCognitive: true }]);
     }
   };
 
   const clearMatrix = () => {
-    if (confirm('ยืนยันการลบข้อมูลตัวเลขทั้งหมดในตาราง?')) {
+    if (window.confirm('ยืนยันการลบข้อมูลตัวเลขทั้งหมดในตาราง?')) {
       setMatrix({});
     }
   };
 
   const removeUnit = (id: string) => {
-    if(confirm('ลบหน่วยการเรียนรู้นี้?')) setUnits(units.filter(u => u.id !== id));
+    if (window.confirm('ต้องการลบหน่วยการเรียนรู้นี้ใช่หรือไม่?')) {
+      setUnits(prev => prev.filter(u => u.id !== id));
+      setMatrix(prev => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    }
   };
+
   const removeBehavior = (id: string) => {
-    if(confirm('ลบพฤติกรรมนี้?')) setBehaviors(behaviors.filter(b => b.id !== id));
+    if (window.confirm('ต้องการลบพฤติกรรมนี้ใช่หรือไม่?')) {
+      setBehaviors(prev => prev.filter(b => b.id !== id));
+      setMatrix(prev => {
+        const next = { ...prev };
+        Object.keys(next).forEach(uId => {
+          const row = { ...next[uId] };
+          delete row[id];
+          next[uId] = row;
+        });
+        return next;
+      });
+    }
   };
 
   // --- CALCULATIONS ---
@@ -96,7 +115,7 @@ const App: React.FC = () => {
 
   const table2Behaviors = behaviors.filter(b => b.isCognitive);
   const table2Data = useMemo(() => {
-    if (table1GrandTotal === 0) return units.map(() => table2Behaviors.map(() => 0));
+    if (table1GrandTotal === 0 || units.length === 0) return units.map(() => table2Behaviors.map(() => 0));
     const rawMatrix = units.map(u => table2Behaviors.map(b => matrix[u.id]?.[b.id] || 0));
     return scaleMatrix(rawMatrix, 100, 10);
   }, [units, table2Behaviors, matrix, table1GrandTotal]);
@@ -108,7 +127,6 @@ const App: React.FC = () => {
 
   const table2ColSums = useMemo(() => table2Behaviors.map((_, colIdx) => table2Data.reduce((sum, row) => sum + row[colIdx], 0)), [table2Behaviors, table2Data]);
   const table2RowPriorities = calculatePriority(table2Rows.map(r => r.sum));
-  const table2ColPriorities = calculatePriority(table2ColSums);
 
   const table3Data = useMemo(() => table2Data.length ? scaleMatrix(table2Data, 60) : [], [table2Data]);
   const table3Rows = useMemo(() => units.map((unit, i) => {
@@ -118,7 +136,6 @@ const App: React.FC = () => {
 
   const table3ColSums = useMemo(() => table2Behaviors.map((_, colIdx) => table3Data.reduce((sum, row) => sum + row[colIdx], 0)), [table2Behaviors, table3Data]);
   const table3RowPriorities = calculatePriority(table3Rows.map(r => r.sum));
-  const table3ColPriorities = calculatePriority(table3ColSums);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-['Sarabun'] antialiased py-6 px-4 md:px-8">
@@ -135,7 +152,7 @@ const App: React.FC = () => {
               <p className="text-sm text-slate-400 font-medium">จัดการภาระงานและวิเคราะห์สัดส่วนข้อสอบ</p>
             </div>
           </div>
-          <button onClick={() => window.print()} className="group bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-bold transition-all flex items-center gap-2 shadow-xl shadow-indigo-100 active:scale-95">
+          <button type="button" onClick={() => window.print()} className="group bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-bold transition-all flex items-center gap-2 shadow-xl shadow-indigo-100 active:scale-95">
             <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
             พิมพ์รายงาน
           </button>
@@ -167,16 +184,16 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 pt-6 border-t border-slate-100">
-            <button onClick={addUnit} className="px-6 py-3 bg-indigo-50 text-indigo-700 rounded-2xl font-bold hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-2 active:scale-95">
+            <button type="button" onClick={addUnit} className="px-6 py-3 bg-indigo-50 text-indigo-700 rounded-2xl font-bold hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-2 active:scale-95 shadow-sm">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg>
               เพิ่มหน่วยการเรียน
             </button>
-            <button onClick={addBehavior} className="px-6 py-3 bg-indigo-50 text-indigo-700 rounded-2xl font-bold hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-2 active:scale-95">
+            <button type="button" onClick={addBehavior} className="px-6 py-3 bg-indigo-50 text-indigo-700 rounded-2xl font-bold hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-2 active:scale-95 shadow-sm">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg>
               เพิ่มพฤติกรรม
             </button>
             <div className="flex-1"></div>
-            <button onClick={clearMatrix} className="px-6 py-3 text-rose-500 hover:bg-rose-50 rounded-2xl font-bold transition-all flex items-center gap-2 active:scale-95 border border-transparent hover:border-rose-100">
+            <button type="button" onClick={clearMatrix} className="px-6 py-3 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl font-bold transition-all flex items-center gap-2 active:scale-95 border border-rose-100">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
               ล้างตัวเลขทั้งหมด
             </button>
@@ -204,17 +221,25 @@ const App: React.FC = () => {
                     <th rowSpan={3} className="p-3 w-24 border border-slate-100 rounded-tr-3xl font-black text-[10px] uppercase text-slate-400">Periods</th>
                   </tr>
                   <tr className="bg-slate-50/50">
-                    <th colSpan={behaviors.length} className="p-2 text-[10px] font-bold border border-slate-100 text-slate-400">Cognitive | Psychomotor | Affective</th>
+                    <th colSpan={behaviors.length} className="p-2 text-[10px] font-bold border border-slate-100 text-slate-400 uppercase tracking-widest">Cognitive | Psychomotor | Affective</th>
                   </tr>
                   <tr className="bg-white">
                     {behaviors.map(b => (
                       <th key={b.id} className="p-0 font-bold text-[11px] h-48 relative group border border-slate-100 bg-white/50 w-12 min-w-[48px]">
+                        {/* Delete Button - Outside rotation for better click accuracy */}
+                        <div className="absolute top-1 left-1/2 -translate-x-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity no-print">
+                            <button 
+                                type="button" 
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeBehavior(b.id); }} 
+                                className="bg-rose-500 text-white p-1 rounded-full hover:bg-rose-600 shadow-md active:scale-90"
+                            >
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
+                            </button>
+                        </div>
+                        {/* Text - Rotated Up */}
                         <div className="rotate-up absolute inset-0 flex items-center justify-center font-black text-slate-600 pointer-events-none">
                           <span className="whitespace-nowrap translate-y-[-10px]">{b.name}</span>
                         </div>
-                        <button onClick={() => removeBehavior(b.id)} className="absolute top-2 right-1 text-rose-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 no-print transition-all z-10">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path></svg>
-                        </button>
                       </th>
                     ))}
                   </tr>
@@ -222,11 +247,11 @@ const App: React.FC = () => {
                 <tbody className="bg-white">
                   {table1Rows.map((row, rIdx) => (
                     <tr key={row.unit.id} className="group hover:bg-indigo-50/30 transition-colors">
-                      <td className="p-4 text-left border border-slate-100 relative">
-                        <div className="flex items-center gap-3">
+                      <td className="p-4 text-left border border-slate-100">
+                        <div className="flex items-start gap-4">
                           <textarea 
                             rows={2}
-                            className="w-full bg-transparent border-none focus:ring-0 p-0 text-left resize-none leading-relaxed font-bold text-slate-700" 
+                            className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-left resize-none leading-relaxed font-bold text-slate-700 min-w-[200px] outline-none" 
                             value={row.unit.name} 
                             onChange={e => {
                               const newUnits = [...units];
@@ -234,8 +259,13 @@ const App: React.FC = () => {
                               setUnits(newUnits);
                             }} 
                           />
-                          <button onClick={() => removeUnit(row.unit.id)} className="text-slate-200 hover:text-rose-500 opacity-0 group-hover:opacity-100 no-print transition-all">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                          <button 
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeUnit(row.unit.id); }} 
+                            className="no-print text-rose-200 hover:text-rose-500 transition-all p-1.5 opacity-0 group-hover:opacity-100 hover:bg-rose-50 rounded-lg active:scale-90"
+                            title="ลบหน่วยนี้"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                           </button>
                         </div>
                       </td>
@@ -275,27 +305,19 @@ const App: React.FC = () => {
                     <td className="p-3 text-xl bg-indigo-500 text-white border border-slate-800">{table1GrandTotal || '-'}</td>
                     <td colSpan={2} className="rounded-br-3xl bg-slate-900"></td>
                   </tr>
-                  <tr className="no-print">
-                    <td className="p-6 text-left uppercase tracking-widest text-[10px] font-black text-slate-400">Column Priority</td>
-                    {table1ColPriorities.map((p, i) => (
-                      <td key={behaviors[i].id} className="p-2 text-indigo-400 font-black text-sm">{p}</td>
-                    ))}
-                    <td colSpan={3}></td>
-                  </tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          {/* Result Section Grid */}
           <div className="grid grid-cols-1 gap-12">
             
-            {/* Table 2 - Normalized 100 */}
+            {/* Table 2 - Normalized 100 with strict cap of 10 per cell */}
             <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden print-break">
               <div className="p-8 pb-0 text-center">
                 <span className="inline-block px-4 py-1.5 bg-emerald-100 text-emerald-600 text-[10px] font-black uppercase tracking-[0.2em] rounded-full mb-3">Table 02</span>
                 <h2 className="text-3xl font-black text-slate-900">น้ำหนักคะแนน (ฐาน 100)</h2>
-                <p className="text-xs text-slate-400 font-bold uppercase mt-2">คำนวณสัดส่วนพุทธพิสัยแบบเฉลี่ยค่าน้ำหนัก</p>
+                <p className="text-xs text-slate-400 font-bold uppercase mt-2">คำนวณสัดส่วนพุทธพิสัย (จำกัดค่าสูงสุดต่อช่อง 10 ผลรวม 100)</p>
               </div>
 
               <div className="p-8 overflow-x-auto">
@@ -348,7 +370,7 @@ const App: React.FC = () => {
               <div className="p-8 pb-0 text-center">
                 <span className="inline-block px-4 py-1.5 bg-blue-100 text-blue-600 text-[10px] font-black uppercase tracking-[0.2em] rounded-full mb-3">Table 03</span>
                 <h2 className="text-3xl font-black text-slate-900">จำนวนข้อสอบที่ใช้จริง (ฐาน 60)</h2>
-                <p className="text-xs text-slate-400 font-bold uppercase mt-2">แปลงค่าน้ำหนักเป็นจำนวนข้อสอบสำหรับการออกข้อสอบจริง</p>
+                <p className="text-xs text-slate-400 font-bold uppercase mt-2">แปลงค่าน้ำหนักเป็นจำนวนข้อสอบสำหรับการออกข้อสอบจริง (ผลรวม 60)</p>
               </div>
 
               <div className="p-8 overflow-x-auto">
