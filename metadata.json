@@ -1,0 +1,5 @@
+{
+  "name": "Curriculum Analysis Table Generator",
+  "description": "A comprehensive tool to create and calculate educational curriculum analysis tables (Table 1, Normalized Table to 100, and Question Count Table to 60) with automatic priority ranking and sum adjustments.",
+  "requestFramePermissions": []
+}
