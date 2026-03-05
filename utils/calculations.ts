@@ -3,7 +3,7 @@
  * Calculates priority rankings based on values.
  * Highest value gets rank 1.
  * Same values get the same rank.
- * Capped at 1-10 as per requirement.
+ * Limited by the number of unique values.
  */
 export const calculatePriority = (values: number[]): (number | string)[] => {
   if (values.length === 0) return [];
@@ -15,9 +15,7 @@ export const calculatePriority = (values: number[]): (number | string)[] => {
   
   return values.map(v => {
     if (v === 0) return '-';
-    const rank = sortedUnique.indexOf(v) + 1;
-    // Rank is 1-10 only.
-    return rank > 10 ? 10 : rank;
+    return sortedUnique.indexOf(v) + 1;
   });
 };
 
